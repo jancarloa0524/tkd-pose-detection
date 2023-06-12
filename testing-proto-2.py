@@ -15,7 +15,7 @@ model = load_model('action.h5')
 sequence = [] # collects our 30 frames, and passes into predictions model
 sentence = [] # history of detections
 word = ""
-threshold = 0.8 # confidence metric. only render results if they are above this threshold
+threshold = 0.9 # confidence metric. only render results if they are above this threshold
 
 # make detections
 def mediapipe_detection(image, model):
@@ -26,17 +26,17 @@ def mediapipe_detection(image, model):
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR) # color convert back BGR
     return image, results
 
-# Actions we detect
-actions = np.array(['jab', 'cross','hook'])
+# Techniques we detect
+techniques = np.array(['complete snapkick!', 'pick up your knee first!','bring the knee back after kicking'])
 # thirty videos worth of data
-num_sequences = 30
+num_sequences = 90
 # 30 frame length videos
 sequence_length = 30
 # storing each of our 30 frames (as numpy arrays) in different folders
 
 cap = cv2.VideoCapture(0)
 
-# Initiate pose model
+# Initiate holistic model
 with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
     while cap.isOpened():
         ret, frame = cap.read()
@@ -58,24 +58,27 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             # Render predictions to screen
             if res[np.argmax(res)] > threshold: # if the accuracy score is above the threshold
                 if len(sentence) > 0: # if sentence is greater than 0
-                    if actions[np.argmax(res)] != sentence[-1]: # check if the current action does not match the last prediction
-                            sentence.append(actions[np.argmax(res)])
-                            word = actions[np.argmax(res)]
+                    if techniques[np.argmax(res)] != sentence[-1]: # check if the current action does not match the last prediction
+                            sentence.append(techniques[np.argmax(res)])
+                            word = techniques[np.argmax(res)]
                 else:
-                    sentence.append(actions[np.argmax(res)])
+                    sentence.append(techniques[np.argmax(res)])
             # if there are no sentences in the sentences array. If not, append it. If we do, check the current predicted word isn't the same as whatever is there. If it is, skip the append, but if not, append it. 
         
             # if the sentence is greater 2, then grab the last 2 values so we don't have a giant array
             if len(sentence) > 2:
                 sentence = sentence[-2:]
+        # render
+        # cv2.rectangle(image, (0,0), (640,40), (245,117,16), -1)
+        # cv2.putText(image, word, (3,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
-        # Display Class
-        cv2.rectangle(image, (0,0), (250, 30), (0,0,0), -1)
+        # Display Class, was 250
+        cv2.rectangle(image, (0,0), (640, 30), (0,0,0), -1)
         cv2.putText(image, 'Action:'
                     , (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2, cv2.LINE_AA)
         cv2.putText(image, word
                     , (100, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv2.LINE_AA)
-        print(sentence)
+        print(word)
         
         cv2.imshow('Feed', image)
 
